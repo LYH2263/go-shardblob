@@ -39,8 +39,6 @@ func (t *Tagged) ID() ID {
 
 // Reset 复位并重新写入 tag。
 func (t *Tagged) Reset(tag []byte) {
-	t.h.Reset()
-	_, _ = t.h.Write(tag)
 }
 
 // SumTagged 计算 tag || data 的摘要。

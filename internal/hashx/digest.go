@@ -47,7 +47,6 @@ func (s *Sink) Bytes() int64 {
 
 // Reset 清空状态。
 func (s *Sink) Reset() {
-	s.h.Reset()
 	s.n = 0
 }
 

@@ -27,6 +27,7 @@ type Store struct {
 	mem      *memMan
 	persistM sync.Mutex
 	closed   bool
+	objHash  *hashx.Tagged
 }
 
 // Open 打开（或创建）磁盘仓。root 必须非空。
