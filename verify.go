@@ -23,11 +23,9 @@ func (s *Store) Verify(id ObjectID) error {
 	}
 	rep, err := verify.Object(s.blobs, mf)
 	if err != nil {
-		if rep != nil && !rep.OK() {
-			return fmt.Errorf("%w: %s", ErrVerify, err.Error())
-		}
 		return err
 	}
+	_ = rep
 	return nil
 }
 
