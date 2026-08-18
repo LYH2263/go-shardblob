@@ -57,9 +57,7 @@ func (m *Memory) Get(id hashx.ID) ([]byte, error) {
 	if !ok {
 		return nil, ErrNotFound
 	}
-	cp := make([]byte, len(b.data))
-	copy(cp, b.data)
-	return cp, nil
+	return b.data, nil
 }
 
 func (m *Memory) Open(id hashx.ID) (io.ReadCloser, error) {

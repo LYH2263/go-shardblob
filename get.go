@@ -32,16 +32,38 @@ func (s *Store) Get(id ObjectID) (io.ReadCloser, error) {
 
 // GetBytes 读出全部内容。
 func (s *Store) GetBytes(id ObjectID) ([]byte, error) {
-	rc, err := s.Get(id)
+	done, err := s.beginIO()
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(rc); err != nil {
+	defer done()
+	hid := toHX(id)
+	if !s.idx.Has(hid) {
+		return nil, ErrNotFound
+	}
+	mf, err := s.loadManifest(hid)
+	if err != nil {
+		if err == ErrNotFound {
+			return nil, ErrIncomplete
+		}
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	var out []byte
+	for i, e := range mf.Chunks {
+		data, gerr := s.blobs.Get(e.ID)
+		if gerr != nil {
+			return nil, gerr
+		}
+		if i == 0 {
+			out = data
+		} else {
+			out = append(out, data...)
+		}
+	}
+	if out == nil {
+		out = []byte{}
+	}
+	return out, nil
 }
 
 // Has 报告对象是否在索引中（完整清单才可见）。
