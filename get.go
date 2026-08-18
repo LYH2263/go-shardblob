@@ -1,7 +1,6 @@
 package shardblob
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 

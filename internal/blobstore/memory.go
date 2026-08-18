@@ -57,7 +57,10 @@ func (m *Memory) Get(id hashx.ID) ([]byte, error) {
 	if !ok {
 		return nil, ErrNotFound
 	}
-	return b.data, nil
+	// 返回调用方独占的副本：Put 入栈即复制，Get 出栈亦复制，避免外部改动污染内部数据。
+	cp := make([]byte, len(b.data))
+	copy(cp, b.data)
+	return cp, nil
 }
 
 func (m *Memory) Open(id hashx.ID) (io.ReadCloser, error) {

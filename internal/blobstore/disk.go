@@ -94,23 +94,27 @@ func (d *Disk) Get(id hashx.ID) ([]byte, error) {
 		return nil, err
 	}
 	d.mu.RLock()
-	if c, ok := d.cache[id]; ok {
-		d.mu.RUnlock()
-		return c, nil
-	}
+	c, ok := d.cache[id]
 	d.mu.RUnlock()
-	path := layout.ChunkPath(d.root, id)
-	b, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrNotFound
+	if !ok {
+		path := layout.ChunkPath(d.root, id)
+		b, err := os.ReadFile(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, ErrNotFound
+			}
+			return nil, err
 		}
-		return nil, err
+		// 缓存不可变快照：缓存条目只赋值、永不就地改写。
+		d.mu.Lock()
+		d.cache[id] = b
+		d.mu.Unlock()
+		c = b
 	}
-	d.mu.Lock()
-	d.cache[id] = b
-	d.mu.Unlock()
-	return b, nil
+	// 返回调用方独占的副本，避免外部改动污染缓存与后续读取。
+	cp := make([]byte, len(c))
+	copy(cp, c)
+	return cp, nil
 }
 
 func (d *Disk) Open(id hashx.ID) (io.ReadCloser, error) {
