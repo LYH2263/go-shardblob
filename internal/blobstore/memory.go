@@ -50,6 +50,9 @@ func (m *Memory) Put(id hashx.ID, data []byte) error {
 func (m *Memory) Get(id hashx.ID) ([]byte, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	if err := m.guard(); err != nil {
+		return nil, err
+	}
 	b, ok := m.blobs[id]
 	if !ok {
 		return nil, ErrNotFound
@@ -127,6 +130,5 @@ func (m *Memory) Close() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.closed = true
-	m.blobs = nil
 	return nil
 }

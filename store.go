@@ -127,6 +127,10 @@ func (s *Store) beginIO() (func(), error) {
 		return nil, ErrClosed
 	}
 	done := s.fence.BeginShared()
+	if s.closed {
+		done()
+		return nil, ErrClosed
+	}
 	return done, nil
 }
 
