@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/LYH2263/go-shardblob/internal/blobstore"
 	"github.com/LYH2263/go-shardblob/internal/chunk"
 	"github.com/LYH2263/go-shardblob/internal/hashx"
 	"github.com/LYH2263/go-shardblob/internal/index"
@@ -37,9 +38,14 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 			return ObjectID{}, err
 		}
 		cid := hashx.ChunkID(s.algo, p.Data)
-		if err := s.blobs.Put(cid, p.Data); err != nil {
+		existed, herr := s.blobs.Has(cid)
+		if herr != nil {
+			return ObjectID{}, herr
+		}
+		if _, err := blobstore.PutChecked(s.blobs, s.algo, p.Data); err != nil {
 			return ObjectID{}, err
 		}
+		_ = existed
 		entries = append(entries, manifest.Entry{
 			ID:     cid,
 			Size:   uint32(len(p.Data)),

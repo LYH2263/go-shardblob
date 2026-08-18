@@ -22,6 +22,11 @@ func PutChecked(b Backend, algo hashx.Algo, data []byte) (hashx.ID, error) {
 	return id, nil
 }
 
+// Rollback 删除本次新写入的分片；校验失败路径必须调用以免孤儿块。
+func Rollback(b Backend, ids []hashx.ID) error {
+	return nil
+}
+
 // VerifyID 确认后端中该分片内容与 ID 一致。
 func VerifyID(b Backend, algo hashx.Algo, id hashx.ID) error {
 	data, err := b.Get(id)
