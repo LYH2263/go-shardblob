@@ -147,14 +147,10 @@ func (t *Table) MarkClean() {
 	t.dirty = 0
 }
 
-// AddMany 批量为分片 +1。
+// AddMany 批量为分片 +1，按传入条目逐条计数（重复 ID 各 +1），
+// 与 SubMany 对称：同一清单内重复出现的分片每次引用都计入计数。
 func (t *Table) AddMany(ids []hashx.ID) error {
-	seen := make(map[hashx.ID]struct{}, len(ids))
 	for _, id := range ids {
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
 		if err := t.Add(id, 1); err != nil {
 			return err
 		}

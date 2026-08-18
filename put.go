@@ -73,7 +73,9 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	if err := s.writeManifest(oid, raw); err != nil {
 		return ObjectID{}, err
 	}
-	if err := s.refs.AddMany(uniqueChunkIDs(mf.ChunkIDs())); err != nil {
+	// 按清单条目逐条增加引用，与 Delete 的 SubMany 对称：
+	// 同一对象内重复出现的分片，每次引用都计入计数。
+	if err := s.refs.AddMany(mf.ChunkIDs()); err != nil {
 		return ObjectID{}, err
 	}
 	s.idx.Put(index.Record{
@@ -94,17 +96,4 @@ func (s *Store) PutBytes(p []byte) (ObjectID, error) {
 		p = []byte{}
 	}
 	return s.Put(bytes.NewReader(p))
-}
-
-func uniqueChunkIDs(ids []hashx.ID) []hashx.ID {
-	seen := make(map[hashx.ID]struct{}, len(ids))
-	out := make([]hashx.ID, 0, len(ids))
-	for _, id := range ids {
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		out = append(out, id)
-	}
-	return out
 }
