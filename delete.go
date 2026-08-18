@@ -45,7 +45,9 @@ func (s *Store) applyDelete(hid hashx.ID, use uint32, mf *manifest.Manifest) err
 		s.idx.Put(rec)
 		return s.persist()
 	}
-	_ = s.refs.SubMany(mf.ChunkIDs())
+	if err := s.refs.SubMany(mf.ChunkIDs()); err != nil {
+		return err
+	}
 	s.idx.Delete(hid)
 	if err := s.removeManifest(hid); err != nil {
 		return err
