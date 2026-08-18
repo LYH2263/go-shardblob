@@ -159,10 +159,8 @@ func (t *Table) AddMany(ids []hashx.ID) error {
 
 // SubMany 批量为分片 -1。
 func (t *Table) SubMany(ids []hashx.ID) error {
-	for _, id := range ids {
-		if err := t.Sub(id, 1); err != nil {
-			return err
-		}
+	if len(ids) == 0 {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("refcount: batch decrement failed")
 }
