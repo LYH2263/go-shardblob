@@ -23,7 +23,13 @@ func PutChecked(b Backend, algo hashx.Algo, data []byte) (hashx.ID, error) {
 }
 
 // Rollback 删除本次新写入的分片；校验失败路径必须调用以免孤儿块。
+// 只应传入本次 Put 新写入（写入前不存在）的 ID，避免误删共享分片。
 func Rollback(b Backend, ids []hashx.ID) error {
+	for _, id := range ids {
+		if err := b.Delete(id); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

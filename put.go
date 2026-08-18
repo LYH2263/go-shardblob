@@ -26,26 +26,35 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	sp := chunk.NewSplitter(r, s.opts.policy)
 	obj := hashx.NewTagged(s.algo, hashx.TagObject)
 	var entries []manifest.Entry
+	var written []hashx.ID // 本次新写入的分片；失败时回滚以免孤儿块
+	rollback := func() { _ = blobstore.Rollback(s.blobs, written) }
 	for {
 		p, nerr := sp.Next()
 		if nerr == io.EOF {
 			break
 		}
 		if nerr != nil {
+			rollback()
 			return ObjectID{}, nerr
 		}
 		if _, err := obj.Write(p.Data); err != nil {
+			rollback()
 			return ObjectID{}, err
 		}
 		cid := hashx.ChunkID(s.algo, p.Data)
 		existed, herr := s.blobs.Has(cid)
 		if herr != nil {
+			rollback()
 			return ObjectID{}, herr
 		}
+		// 先登记再写入：校验失败时该分片可能已落盘，必须纳入回滚
+		if !existed {
+			written = append(written, cid)
+		}
 		if _, err := blobstore.PutChecked(s.blobs, s.algo, p.Data); err != nil {
+			rollback()
 			return ObjectID{}, err
 		}
-		_ = existed
 		entries = append(entries, manifest.Entry{
 			ID:     cid,
 			Size:   uint32(len(p.Data)),
