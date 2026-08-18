@@ -21,14 +21,13 @@ type Disk struct {
 	nbytes atomic.Int64
 	nfile  atomic.Int64
 	closed atomic.Bool
-	cache  map[hashx.ID][]byte
 }
 
 func OpenDisk(root string) (*Disk, error) {
 	if err := layout.EnsureRoot(root); err != nil {
 		return nil, err
 	}
-	d := &Disk{root: root, cache: make(map[hashx.ID][]byte)}
+	d := &Disk{root: root}
 	if err := d.recount(); err != nil {
 		return nil, err
 	}
@@ -93,12 +92,6 @@ func (d *Disk) Get(id hashx.ID) ([]byte, error) {
 	if err := d.guard(); err != nil {
 		return nil, err
 	}
-	d.mu.RLock()
-	if c, ok := d.cache[id]; ok {
-		d.mu.RUnlock()
-		return c, nil
-	}
-	d.mu.RUnlock()
 	path := layout.ChunkPath(d.root, id)
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -107,9 +100,6 @@ func (d *Disk) Get(id hashx.ID) ([]byte, error) {
 		}
 		return nil, err
 	}
-	d.mu.Lock()
-	d.cache[id] = b
-	d.mu.Unlock()
 	return b, nil
 }
 
