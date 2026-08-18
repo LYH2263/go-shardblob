@@ -134,10 +134,6 @@ func (s *Store) beginIO() (func(), error) {
 	return done, nil
 }
 
-func (s *Store) flushIndex() error {
-	return s.persist()
-}
-
 func (s *Store) writeManifest(id hashx.ID, raw []byte) error {
 	if s.opts.memory {
 		return s.putMemManifest(id, raw)

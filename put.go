@@ -70,21 +70,18 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	if err != nil {
 		return ObjectID{}, err
 	}
-	s.idx.Put(index.Record{
-		ID:       oid,
-		UseCount: 1,
-		Size:     mf.TotalSize,
-		Chunks:   uint32(len(entries)),
-	})
-	if err := s.flushIndex(); err != nil {
-		return ObjectID{}, err
-	}
 	if err := s.writeManifest(oid, raw); err != nil {
 		return ObjectID{}, err
 	}
 	if err := s.refs.AddMany(mf.ChunkIDs()); err != nil {
 		return ObjectID{}, err
 	}
+	s.idx.Put(index.Record{
+		ID:       oid,
+		UseCount: 1,
+		Size:     mf.TotalSize,
+		Chunks:   uint32(len(entries)),
+	})
 	if err := s.persist(); err != nil {
 		return ObjectID{}, err
 	}
