@@ -17,6 +17,7 @@ func PutChecked(b Backend, algo hashx.Algo, data []byte) (hashx.ID, error) {
 		return id, err
 	}
 	if !hashx.EqualID(hashx.ChunkID(algo, got), id) {
+		_ = b.Delete(id)
 		return id, fmt.Errorf("%w: stored bytes mismatch id %s", ErrCorrupt, id.Hex())
 	}
 	return id, nil
@@ -24,7 +25,13 @@ func PutChecked(b Backend, algo hashx.Algo, data []byte) (hashx.ID, error) {
 
 // Rollback 删除本次新写入的分片；校验失败路径必须调用以免孤儿块。
 func Rollback(b Backend, ids []hashx.ID) error {
-	return nil
+	var first error
+	for _, id := range ids {
+		if err := b.Delete(id); err != nil && first == nil {
+			first = err
+		}
+	}
+	return first
 }
 
 // VerifyID 确认后端中该分片内容与 ID 一致。

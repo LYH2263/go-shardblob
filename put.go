@@ -26,6 +26,7 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	sp := chunk.NewSplitter(r, s.opts.policy)
 	obj := hashx.NewTagged(s.algo, hashx.TagObject)
 	var entries []manifest.Entry
+	var created []hashx.ID
 	for {
 		p, nerr := sp.Next()
 		if nerr == io.EOF {
@@ -43,9 +44,12 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 			return ObjectID{}, herr
 		}
 		if _, err := blobstore.PutChecked(s.blobs, s.algo, p.Data); err != nil {
+			_ = blobstore.Rollback(s.blobs, created)
 			return ObjectID{}, err
 		}
-		_ = existed
+		if !existed {
+			created = append(created, cid)
+		}
 		entries = append(entries, manifest.Entry{
 			ID:     cid,
 			Size:   uint32(len(p.Data)),
