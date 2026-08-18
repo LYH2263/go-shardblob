@@ -31,7 +31,7 @@ func MarkLive(idx *index.Index, load func(hashx.ID) (*manifest.Manifest, error),
 func Orphans(blobs blobstore.Backend, refs *refcount.Table) ([]hashx.ID, error) {
 	var out []hashx.ID
 	err := blobs.List(func(id hashx.ID) error {
-		if refs.ZeroOrMissing(id) {
+		if refs.Get(id) <= 1 {
 			out = append(out, id)
 		}
 		return nil

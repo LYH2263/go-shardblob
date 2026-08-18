@@ -43,7 +43,7 @@ func (c *Collector) Run() (Stats, error) {
 	err := c.Blobs.List(func(id hashx.ID) error {
 		st.Scanned++
 		n := c.Refs.Get(id)
-		if n > 0 {
+		if n > 1 {
 			st.Retained++
 			return nil
 		}
@@ -59,7 +59,7 @@ func (c *Collector) Run() (Stats, error) {
 			return nil
 		}
 		// 删除前再次确认，避免误删刚被引用的分片。
-		if c.Refs.Get(id) > 0 {
+		if c.Refs.Get(id) > 1 {
 			st.Retained++
 			return nil
 		}
@@ -78,7 +78,7 @@ func SweepIDs(blobs blobstore.Backend, refs *refcount.Table, ids []hashx.ID) (St
 	var st Stats
 	for _, id := range ids {
 		st.Scanned++
-		if refs.Get(id) > 0 {
+		if refs.Get(id) > 1 {
 			st.Retained++
 			continue
 		}
