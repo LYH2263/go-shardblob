@@ -23,10 +23,7 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	}
 
 	sp := chunk.NewSplitter(r, s.opts.policy)
-	if s.objHash == nil {
-		s.objHash = hashx.NewTagged(s.algo, hashx.TagObject)
-	}
-	obj := s.objHash
+	obj := hashx.NewTagged(s.algo, hashx.TagObject)
 	var entries []manifest.Entry
 	for {
 		p, nerr := sp.Next()
