@@ -73,7 +73,7 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	if err := s.writeManifest(oid, raw); err != nil {
 		return ObjectID{}, err
 	}
-	if err := s.refs.AddMany(uniqueChunkIDs(mf.ChunkIDs())); err != nil {
+	if err := s.refs.AddMany(mf.ChunkIDs()); err != nil {
 		return ObjectID{}, err
 	}
 	s.idx.Put(index.Record{
@@ -94,17 +94,4 @@ func (s *Store) PutBytes(p []byte) (ObjectID, error) {
 		p = []byte{}
 	}
 	return s.Put(bytes.NewReader(p))
-}
-
-func uniqueChunkIDs(ids []hashx.ID) []hashx.ID {
-	seen := make(map[hashx.ID]struct{}, len(ids))
-	out := make([]hashx.ID, 0, len(ids))
-	for _, id := range ids {
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		out = append(out, id)
-	}
-	return out
 }
