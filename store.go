@@ -142,8 +142,17 @@ func (s *Store) ctxErr(ctx context.Context) error {
 	return ctx.Err()
 }
 
+// abortNewChunks 删除本轮新写入的分片，用于 Put 取消或出错后的回滚。
+// 调用方应只传入本次 Put 新建（此前不存在）的分片 ID，以免误删被其他对象引用的分片。
+// 删除为尽力而为：即便某个分片删除失败也继续处理其余分片，并返回首个遇到的错误。
 func (s *Store) abortNewChunks(ids []hashx.ID) error {
-	return nil
+	var first error
+	for _, id := range ids {
+		if err := s.blobs.Delete(id); err != nil && first == nil {
+			first = err
+		}
+	}
+	return first
 }
 
 func (s *Store) writeManifest(id hashx.ID, raw []byte) error {
