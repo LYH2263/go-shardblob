@@ -31,6 +31,7 @@ func (s *Store) PutContext(ctx context.Context, r io.Reader) (ObjectID, error) {
 	sp := chunk.NewSplitter(r, s.opts.policy)
 	obj := hashx.NewTagged(s.algo, hashx.TagObject)
 	var entries []manifest.Entry
+	var created []hashx.ID
 	for {
 		p, nerr := sp.Next()
 		if nerr == io.EOF {
@@ -50,8 +51,11 @@ func (s *Store) PutContext(ctx context.Context, r io.Reader) (ObjectID, error) {
 		if err := s.blobs.Put(cid, p.Data); err != nil {
 			return ObjectID{}, err
 		}
-		_ = existed
+		if !existed {
+			created = append(created, cid)
+		}
 		if err := s.ctxErr(ctx); err != nil {
+			_ = s.abortNewChunks(created)
 			return ObjectID{}, err
 		}
 		entries = append(entries, manifest.Entry{

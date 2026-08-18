@@ -143,7 +143,13 @@ func (s *Store) ctxErr(ctx context.Context) error {
 }
 
 func (s *Store) abortNewChunks(ids []hashx.ID) error {
-	return nil
+	var first error
+	for _, id := range ids {
+		if err := s.blobs.Delete(id); err != nil && first == nil {
+			first = err
+		}
+	}
+	return first
 }
 
 func (s *Store) writeManifest(id hashx.ID, raw []byte) error {
