@@ -1,6 +1,7 @@
 package shardblob
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -132,6 +133,17 @@ func (s *Store) beginIO() (func(), error) {
 		return nil, ErrClosed
 	}
 	return done, nil
+}
+
+func (s *Store) ctxErr(ctx context.Context) error {
+	if ctx == nil {
+		return nil
+	}
+	return ctx.Err()
+}
+
+func (s *Store) abortNewChunks(ids []hashx.ID) error {
+	return nil
 }
 
 func (s *Store) writeManifest(id hashx.ID, raw []byte) error {

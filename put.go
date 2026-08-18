@@ -2,6 +2,7 @@ package shardblob
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 
@@ -13,6 +14,11 @@ import (
 
 // Put 切分 reader、写入分片、写清单并建索引。相同内容只增对象引用。
 func (s *Store) Put(r io.Reader) (ObjectID, error) {
+	return s.PutContext(context.Background(), r)
+}
+
+// PutContext 带取消语义的写入；取消后不得留下已写分片。
+func (s *Store) PutContext(ctx context.Context, r io.Reader) (ObjectID, error) {
 	done, err := s.beginIO()
 	if err != nil {
 		return ObjectID{}, err
@@ -37,7 +43,15 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 			return ObjectID{}, err
 		}
 		cid := hashx.ChunkID(s.algo, p.Data)
+		existed, herr := s.blobs.Has(cid)
+		if herr != nil {
+			return ObjectID{}, herr
+		}
 		if err := s.blobs.Put(cid, p.Data); err != nil {
+			return ObjectID{}, err
+		}
+		_ = existed
+		if err := s.ctxErr(ctx); err != nil {
 			return ObjectID{}, err
 		}
 		entries = append(entries, manifest.Entry{
