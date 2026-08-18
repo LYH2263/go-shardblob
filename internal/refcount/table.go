@@ -149,7 +149,12 @@ func (t *Table) MarkClean() {
 
 // AddMany 批量为分片 +1。
 func (t *Table) AddMany(ids []hashx.ID) error {
+	seen := make(map[hashx.ID]struct{}, len(ids))
 	for _, id := range ids {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
 		if err := t.Add(id, 1); err != nil {
 			return err
 		}
