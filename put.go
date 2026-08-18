@@ -26,6 +26,7 @@ func (s *Store) Put(r io.Reader) (ObjectID, error) {
 	if s.objHash == nil {
 		s.objHash = hashx.NewTagged(s.algo, hashx.TagObject)
 	}
+	s.objHash.Reset(hashx.TagObject)
 	obj := s.objHash
 	var entries []manifest.Entry
 	for {
